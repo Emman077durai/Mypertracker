@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PennyPulse - Smart Money Tracker</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 h-full flex flex-col transition-colors duration-200">
+
+    <!-- Header & Navigation -->
+    <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-emerald-600 text-white p-2.5 rounded-xl shadow-md flex items-center justify-center">
+                    <i class="fa-solid fa-wallet text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight tracking-tight">PennyPulse</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Balance, Debts & Analytics</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                <!-- Sync Modal Trigger -->
+                <button onclick="openSyncModal()" class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-xs sm:text-sm font-medium transition">
+                    <i class="fa-solid fa-file-excel text-emerald-600"></i>
+                    <span class="hidden sm:inline">Google Sheets</span> Sync
+                </button>
+
+                <!-- Theme Toggle -->
+                <button id="themeToggleBtn" onclick="toggleDarkMode()" class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition" title="Toggle Theme">
+                    <i id="themeIcon" class="fa-solid fa-moon"></i>
+                </button>
+
+                <!-- Backup / Export -->
+                <button onclick="openExportModal()" class="hidden sm:inline-flex items-center space-x-2 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 text-sm font-medium transition">
+                    <i class="fa-solid fa-download text-xs"></i>
+                    <span>Export</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 overflow-y-auto custom-scrollbar">
+
+        <!-- Quick Tea, Coffee, Snacks Bar -->
+        <div class="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 dark:from-amber-950/30 dark:via-orange-950/30 dark:to-amber-950/30 p-4 rounded-2xl border border-amber-200/50 dark:border-amber-900/50 shadow-sm">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="flex items-center space-x-2 text-amber-800 dark:text-amber-200">
+                    <i class="fa-solid fa-mug-hot text-lg"></i>
+                    <span class="font-bold text-sm">Quick Refreshment Expenses:</span>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="quickDeduct('Tea ☕', 10, 'Tea / Refreshments')" class="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-amber-50 dark:hover:bg-slate-700 text-xs font-semibold shadow-sm transition flex items-center space-x-1.5">
+                        <span>☕ Tea</span>
+                        <span class="text-emerald-600 dark:text-emerald-400 font-bold">₹10</span>
+                    </button>
+                    <button onclick="quickDeduct('Tea Special ☕', 15, 'Tea / Refreshments')" class="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-amber-50 dark:hover:bg-slate-700 text-xs font-semibold shadow-sm transition flex items-center space-x-1.5">
+                        <span>☕ Tea</span>
+                        <span class="text-emerald-600 dark:text-emerald-400 font-bold">₹15</span>
+                    </button>
+                    <button onclick="quickDeduct('Coffee ☕', 20, 'Tea / Refreshments')" class="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-amber-50 dark:hover:bg-slate-700 text-xs font-semibold shadow-sm transition flex items-center space-x-1.5">
+                        <span>☕ Coffee</span>
+                        <span class="text-emerald-600 dark:text-emerald-400 font-bold">₹20</span>
+                    </button>
+                    <button onclick="quickDeduct('Snacks 🥪', 30, 'Food & Snacks')" class="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-amber-50 dark:hover:bg-slate-700 text-xs font-semibold shadow-sm transition flex items-center space-x-1.5">
+                        <span>🥪 Snacks</span>
+                        <span class="text-emerald-600 dark:text-emerald-400 font-bold">₹30</span>
+                    </button>
+                    <button onclick="quickDeduct('Snacks 🥟', 50, 'Food & Snacks')" class="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-amber-50 dark:hover:bg-slate-700 text-xs font-semibold shadow-sm transition flex items-center space-x-1.5">
+                        <span>🥟 Snacks</span>
+                        <span class="text-emerald-600 dark:text-emerald-400 font-bold">₹50</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Summary Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Main Balance Card -->
+            <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Main Balance</span>
+                        <span class="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 text-sm">
+                            <i class="fa-solid fa-indian-rupee-sign"></i>
+                        </span>
+                    </div>
+                    <h2 id="summaryMainBalance" class="text-2xl font-bold mt-2 text-slate-900 dark:text-white">₹0.00</h2>
+                </div>
+                <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500 flex justify-between items-center">
+                    <span>Liquid cash available</span>
+                    <button onclick="openModal('income')" class="text-emerald-600 dark:text-emerald-400 font-semibold hover:underline">+ Add Funds</button>
+                </div>
+            </div>
+
+            <!-- Total Borrowed Debt Card -->
+            <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Borrowed Debt</span>
+                        <span class="p-2 rounded-lg bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 text-sm">
+                            <i class="fa-solid fa-hand-holding-dollar"></i>
+                        </span>
+                    </div>
+                    <h2 id="summaryDebt" class="text-2xl font-bold mt-2 text-rose-600 dark:text-rose-400">₹0.00</h2>
+                </div>
+                <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500 flex justify-between items-center">
+                    <span>Amount you owe</span>
+                    <button onclick="openModal('borrow')" class="text-rose-600 dark:text-rose-400 font-semibold hover:underline">+ Borrow</button>
+                </div>
+            </div>
+
+            <!-- Receivables Card -->
+            <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Receivables (Lent)</span>
+                        <span class="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 text-sm">
+                            <i class="fa-solid fa-file-invoice-dollar"></i>
+                        </span>
+                    </div>
+                    <h2 id="summaryReceivable" class="text-2xl font-bold mt-2 text-amber-600 dark:text-amber-400">₹0.00</h2>
+                </div>
+                <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500 flex justify-between items-center">
+                    <span>Owed to you</span>
+                    <button onclick="openModal('lend')" class="text-amber-600 dark:text-amber-400 font-semibold hover:underline">+ Lend</button>
+                </div>
+            </div>
+
+            <!-- Net Position Card -->
+            <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Net Worth</span>
+                        <span class="p-2 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 text-sm">
+                            <i class="fa-solid fa-scale-balanced"></i>
+                        </span>
+                    </div>
+                    <h2 id="summaryNetWorth" class="text-2xl font-bold mt-2 text-slate-900 dark:text-white">₹0.00</h2>
+                </div>
+                <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500">
+                    <span>Main + Receivables - Debt</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reminders & Smart Messages Box -->
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-5 space-y-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <div class="p-2 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-xl">
+                        <i class="fa-solid fa-bell"></i>
+                    </div>
+                    <h3 class="font-bold text-base">Reminders & Smart Messages Box</h3>
+                </div>
+                <button onclick="openReminderModal()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl transition">
+                    + Add Custom Reminder
+                </button>
+            </div>
+            <div id="remindersContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                <!-- Dynamically populated reminders & system insights -->
+            </div>
+        </div>
+
+        <!-- Action Bar -->
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-wrap gap-2 items-center justify-between">
+            <div class="flex flex-wrap gap-2">
+                <button onclick="openModal('income')" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm flex items-center space-x-2 transition">
+                    <i class="fa-solid fa-circle-plus"></i>
+                    <span>Add Income</span>
+                </button>
+                <button onclick="openModal('expense')" class="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-medium text-sm flex items-center space-x-2 transition">
+                    <i class="fa-solid fa-circle-minus"></i>
+                    <span>Deduct Expense</span>
+                </button>
+                <button onclick="openModal('borrow')" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 dark:bg-slate-700 text-white font-medium text-sm flex items-center space-x-2 transition">
+                    <i class="fa-solid fa-hand-holding-dollar"></i>
+                    <span>Borrow Debt</span>
+                </button>
+                <button onclick="openModal('lend')" class="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-medium text-sm flex items-center space-x-2 transition">
+                    <i class="fa-solid fa-file-invoice-dollar"></i>
+                    <span>Lend Money</span>
+                </button>
+            </div>
+            <button onclick="resetAllData()" class="text-xs text-rose-500 hover:text-rose-700 dark:hover:text-rose-400 font-medium px-3 py-2 rounded-lg border border-rose-200 dark:border-rose-900/50 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition">
+                <i class="fa-solid fa-trash-can mr-1"></i> Reset Data
+            </button>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="flex border-b border-slate-200 dark:border-slate-800 space-x-6 overflow-x-auto">
+            <button onclick="switchTab('analytics')" id="tabBtn-analytics" class="pb-3 font-semibold text-sm border-b-2 border-emerald-600 text-emerald-600 dark:text-emerald-400 transition flex items-center space-x-2 whitespace-nowrap">
+                <i class="fa-solid fa-chart-line"></i>
+                <span>Spending & Balance Charts (X-Y)</span>
+            </button>
+            <button onclick="switchTab('transactions')" id="tabBtn-transactions" class="pb-3 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition flex items-center space-x-2 whitespace-nowrap">
+                <i class="fa-solid fa-list-check"></i>
+                <span>Transactions & Bills</span>
+            </button>
+            <button onclick="switchTab('debts')" id="tabBtn-debts" class="pb-3 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition flex items-center space-x-2 whitespace-nowrap">
+                <i class="fa-solid fa-handshake"></i>
+                <span>Debts & Receivables</span>
+            </button>
+        </div>
+
+        <!-- TAB 1: Visual Charts & Analytics (X-Y Axis Map + Bar Graphs) -->
+        <div id="tabContent-analytics" class="space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Line Chart: X-Axis Date / Y-Axis Amount -->
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-bold text-base flex items-center space-x-2">
+                            <i class="fa-solid fa-chart-line text-emerald-600"></i>
+                            <span>Balance & Spending Flow (X: Dates, Y: ₹)</span>
+                        </h3>
+                    </div>
+                    <div class="relative h-64 w-full">
+                        <canvas id="lineChartCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Bar Chart: Spending Breakdown by Category -->
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-bold text-base flex items-center space-x-2">
+                            <i class="fa-solid fa-chart-simple text-amber-500"></i>
+                            <span>Category Wise Expenses (Bar Chart)</span>
+                        </h3>
+                    </div>
+                    <div class="relative h-64 w-full">
+                        <canvas id="barChartCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: Transactions Log with Bill Attachments -->
+        <div id="tabContent-transactions" class="space-y-4 hidden">
+            <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row gap-3 justify-between items-center">
+                    <h3 class="font-bold text-base">Transaction & Bill History</h3>
+                    <div class="flex items-center space-x-2 w-full sm:w-auto">
+                        <input type="text" id="transactionSearch" oninput="renderTransactions()" placeholder="Search description..." class="w-full sm:w-64 px-3 py-2 text-sm bg-slate-100 dark:bg-slate-800 border-none rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
+                        <select id="transactionFilter" onchange="renderTransactions()" class="py-2 px-3 text-sm bg-slate-100 dark:bg-slate-800 border-none rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
+                            <option value="all">All Types</option>
+                            <option value="income">Income</option>
+                            <option value="expense">Expense</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider">
+                                <th class="py-3 px-4 font-semibold">Date</th>
+                                <th class="py-3 px-4
